@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import Iterable, Dict
-from numpy import empty, ndarray
+from numpy import zeros, ndarray
 
 from .pipeline import Pipeline
 
@@ -75,7 +75,7 @@ class Corpus:
             self.__n_docs += 1
         self.__n_words = len(self.__vocabulary)
         self.__index = dict(self.__index)
-        self.__doc_word = empty((self.__n_docs, self.__n_words))
+        self.__doc_word = zeros((self.__n_docs, self.__n_words))
         for (doc, word), count in doc_word_dict.items():
             self.__doc_word[doc, word] = count
         self.__norm = int(self.__doc_word.sum())
