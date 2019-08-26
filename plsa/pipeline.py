@@ -15,8 +15,8 @@ DEFAULT_PIPELINE = (
     remove_punctuation(string.punctuation),
     tokenize,
     pos_tag,
-    lemmatize_words('NN'),  # any or all of 'JJ', 'VB', 'NN', 'RB'
-    remove_stopwords(stopwords.words('english')),
+    lemmatize_words('NN', 'VB'),  # any or all of 'JJ', 'VB', 'NN', 'RB'
+    remove_stopwords(stopwords.words('english') + ['nbsp', 'amp', 'urllink']),
     remove_short_words(3)
 )
 

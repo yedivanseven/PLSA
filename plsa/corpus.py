@@ -67,12 +67,12 @@ class Corpus:
 
     def __generate_doc_word(self) -> None:
         doc_word_dict = defaultdict(int)
-        for i, doc in enumerate(self.__corpus):
+        for doc in self.__corpus:
             doc = self.__pipeline.process(doc)
             for word in doc:
-                doc_word_dict[(i, self.__index[word])] += 1
+                doc_word_dict[(self.__n_docs, self.__index[word])] += 1
                 self.__vocabulary[self.__index[word]] = word
-            self.__n_docs += 1
+            self.__n_docs = self.__n_docs + 1 if len(doc) else self.__n_docs
         self.__n_words = len(self.__vocabulary)
         self.__index = dict(self.__index)
         self.__doc_word = zeros((self.__n_docs, self.__n_words))
