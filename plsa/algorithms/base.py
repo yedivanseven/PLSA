@@ -1,11 +1,13 @@
 from typing import Union
-from numpy import empty, ndarray, einsum, abs, inf
+from numpy import empty, ndarray, einsum, abs, inf, finfo
 from numpy.random import rand
 
 from .result import PlsaResult
 from ..corpus import Corpus
 
-NormT = Union[ndarray, int, float, None]
+Norm = Union[ndarray, None]
+Divisor = Union[int, float, ndarray]
+EPS = finfo(float).eps
 
 
 class BasePLSA:
@@ -41,11 +43,7 @@ class BasePLSA:
             warmup: int = 5) -> PlsaResult:
         n_iter = 0
         while n_iter < max_iter:
-            try:
-                likelihood = self._update()
-            except FloatingPointError as error:
-                print(error)
-                break
+            likelihood = self._update()
             n_iter += 1
             if n_iter > warmup and self.__rel_change(likelihood) < eps:
                 break
@@ -59,15 +57,21 @@ class BasePLSA:
         conditional = rand(self.__n_topics, n_docs, n_words)
         return self._normalize(conditional)[0]
 
-    def _norm_sum(self, index_pattern: str) -> (ndarray, NormT):
+    def _norm_sum(self, index_pattern: str) -> (ndarray, Norm):
         probability = einsum(index_pattern, self._target, self._conditional)
         return self._normalize(probability)
 
-    @staticmethod
-    def _normalize(array: ndarray, norm: NormT = None) -> (ndarray, NormT):
+    def _normalize(self, array: ndarray, norm: Norm = None) -> (ndarray, Norm):
         norm = norm or array.sum(axis=0)
-        array /= norm
-        return array, norm
+        mask = norm < EPS
+        array[..., mask] = 0.0
+        norm[mask] = 1.0
+        return self._safe_divide(array, norm), norm
+
+    @staticmethod
+    def _safe_divide(array: ndarray, number: Divisor) -> ndarray:
+        array[array < EPS] = 0.0
+        return array / number
 
     def __rel_change(self, new: float) -> float:
         if self._likelihoods:

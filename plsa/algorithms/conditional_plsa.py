@@ -1,4 +1,4 @@
-from numpy import empty, einsum, log
+from numpy import empty, einsum, log, abs
 
 from ..corpus import Corpus
 from .result import PlsaResult
@@ -19,6 +19,7 @@ class ConditionalPLSA(BasePLSA):
         self._joint = einsum('dt,tw->tdw',
                              self._doc_given_topic,
                              self.__topic_given_word) / self.__n_words
+        self._joint = self._safe_divide(self._joint, self.__n_words)
         self._topic = einsum('tdw->t', self._joint)
         self._conditional, self._norm = self._normalize(self._joint)
         return (self._doc_word * log(self._norm)).sum()
