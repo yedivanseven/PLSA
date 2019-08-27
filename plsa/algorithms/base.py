@@ -11,10 +11,10 @@ EPS = finfo(float).eps
 
 
 class BasePLSA:
-    def __init__(self, corpus: Corpus, n_topics: int):
+    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
         self.__n_topics = n_topics
         self._vocabulary = corpus.vocabulary
-        self._doc_word = corpus.doc_word
+        self._doc_word = corpus.get_doc_word(tf_idf)
         self._conditional = self.__random(corpus.n_docs, corpus.n_words)
         self._joint = empty((n_topics, corpus.n_docs, corpus.n_words))
         self._norm = empty((corpus.n_docs, n_topics))

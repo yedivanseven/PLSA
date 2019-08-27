@@ -1,12 +1,12 @@
 from collections import defaultdict
 from typing import Iterable, Dict
-from numpy import zeros, ndarray
+from numpy import zeros, ndarray, log
 
 from .pipeline import Pipeline
 
 
 class Corpus:
-    def __init__(self, corpus: Iterable[str], pipeline: Pipeline):
+    def __init__(self, corpus: Iterable[str], pipeline: Pipeline) -> None:
         self.__corpus = corpus
         self.__pipeline = pipeline
         self.__index = defaultdict(lambda: len(self.__index))
@@ -49,21 +49,21 @@ class Corpus:
     def norm(self) -> int:
         return self.__norm
 
-    @property
-    def doc_word(self) -> ndarray:
-        return self.__doc_word
+    def get_doc_word(self, tf_idf: bool) -> ndarray:
+        if tf_idf:
+            idf = log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
+            tf_idf = self.__doc_word * idf
+            return tf_idf / tf_idf.sum()
+        return self.__doc_word / self.__norm
 
-    @property
-    def doc(self) -> ndarray:
-        return self.__doc_word.sum(axis=1)
+    def get_doc(self, tf_idf: bool) -> ndarray:
+        return self.get_doc_word(tf_idf).sum(axis=1)
 
-    @property
-    def word(self) -> ndarray:
-        return self.__doc_word.sum(axis=0)
+    def get_word(self, tf_idf: bool) -> ndarray:
+        return self.get_doc_word(tf_idf).sum(axis=0)
 
-    @property
-    def doc_given_word(self) -> ndarray:
-        return self.__doc_word / self.word
+    def get_doc_given_word(self, tf_idf: bool) -> ndarray:
+        return self.get_doc_word(tf_idf) / self.get_word(tf_idf)
 
     def __generate_doc_word(self) -> None:
         doc_word_dict = defaultdict(int)
@@ -79,4 +79,3 @@ class Corpus:
         for (doc, word), count in doc_word_dict.items():
             self.__doc_word[doc, word] = count
         self.__norm = int(self.__doc_word.sum())
-        self.__doc_word /= self.__norm

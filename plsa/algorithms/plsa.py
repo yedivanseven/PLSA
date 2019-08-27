@@ -6,8 +6,8 @@ from .base import BasePLSA
 
 
 class PLSA(BasePLSA):
-    def __init__(self, corpus: Corpus, n_topics: int):
-        super().__init__(corpus, n_topics)
+    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
+        super().__init__(corpus, n_topics, tf_idf)
         self.__word_given_topic = empty((corpus.n_words, n_topics))
 
     def _update(self) -> float:
