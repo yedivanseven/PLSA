@@ -1,5 +1,5 @@
 import string
-from typing import Union, Tuple
+from typing import Tuple
 from functools import reduce
 from .preprocessors import *
 
@@ -15,19 +15,17 @@ DEFAULT_PIPELINE = (
     remove_punctuation(string.punctuation),
     tokenize,
     pos_tag,
-    lemmatize_words('NN', 'VB'),  # any or all of 'JJ', 'VB', 'NN', 'RB'
-    remove_stopwords(stopwords.words('english') + ['nbsp', 'amp', 'urllink']),
+    LemmatizeWords('NN'),  # any or all of 'JJ', 'VB', 'NN', 'RB'
+    RemoveStopwords(stopwords.words('english') + ['nbsp', 'amp', 'urllink']),
     remove_short_words(3)
 )
 
-PreprocessorT = Union[Str2StrT, StrIter2TupleT]
-
 
 class Pipeline:
-    def __init__(self, *preprocessors: PreprocessorT) -> None:
+    def __init__(self, *preprocessors: Preprocessor) -> None:
         self.__pipeline = reduce(lambda f, g: lambda x: g(f(x)), preprocessors)
         enumerated = enumerate(preprocessors)
-        self.__preprocessors = {p.__name__: (p, i) for i, p in enumerated}
+        self.__preprocessors = {self.__name(p): (p, i) for i, p in enumerated}
 
     def __repr__(self) -> str:
         title = self.__class__.__name__
@@ -37,12 +35,20 @@ class Pipeline:
         body = (f'{i}: {name}' for name, (_, i) in enumerated)
         return header + divider + '\n'.join(body)
 
-    def __getattr__(self, name) -> PreprocessorT:
+    def __getattr__(self, name) -> Preprocessor:
         return self.__preprocessors[name][0]
 
-    def __getitem__(self, name) -> PreprocessorT:
+    def __getitem__(self, name) -> Preprocessor:
         return self.__preprocessors[name][0]
 
     def process(self, doc: str) -> Tuple[str, ...]:
         return self.__pipeline(doc)
+
+    @staticmethod
+    def __name(thing: object) -> str:
+        try:
+            name = thing.__name__
+        except AttributeError:
+            name = thing.__class__.__name__
+        return name
 

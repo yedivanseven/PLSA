@@ -76,7 +76,7 @@ class BasePLSA:
     def __rel_change(self, new: float) -> float:
         if self._likelihoods:
             old = self._likelihoods[-1]
-            return abs((new - old) / old)
+            return abs((new - old) / new)
         return inf
 
     def _result(self) -> PlsaResult:
