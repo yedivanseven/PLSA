@@ -1,5 +1,5 @@
 from typing import Union
-from numpy import empty, ndarray, einsum, abs, inf, finfo
+from numpy import empty, ndarray, einsum, abs, log, inf, finfo
 from numpy.random import rand
 
 from .result import PlsaResult
@@ -7,7 +7,7 @@ from ..corpus import Corpus
 
 Norm = Union[ndarray, None]
 Divisor = Union[int, float, ndarray]
-EPS = finfo(float).eps
+MACHINE_PRECISION = finfo(float).eps
 
 
 class BasePLSA:
@@ -15,13 +15,12 @@ class BasePLSA:
         self.__n_topics = n_topics
         self._vocabulary = corpus.vocabulary
         self._doc_word = corpus.get_doc_word(tf_idf)
-        self._conditional = self.__random(corpus.n_docs, corpus.n_words)
         self._joint = empty((n_topics, corpus.n_docs, corpus.n_words))
-        self._norm = empty((corpus.n_docs, n_topics))
+        self._conditional = self.__random(corpus.n_docs, corpus.n_words)
+        self.__norm = empty((corpus.n_docs, n_topics))
         self._doc_given_topic = empty((corpus.n_docs, n_topics))
         self._topic = empty(n_topics)
         self._likelihoods = []
-        self._target = self._doc_word
 
     def __repr__(self) -> str:
         title = self.__class__.__name__
@@ -43,34 +42,36 @@ class BasePLSA:
             warmup: int = 5) -> PlsaResult:
         n_iter = 0
         while n_iter < max_iter:
-            likelihood = self._update()
+            self._update()
+            self._conditional, self.__norm = self.__normalize(self._joint)
+            likelihood = (self._doc_word * log(self.__norm)).sum()
             n_iter += 1
             if n_iter > warmup and self.__rel_change(likelihood) < eps:
                 break
             self._likelihoods.append(likelihood)
         return self._result()
 
-    def _update(self) -> float:
+    def _update(self) -> None:
         raise NotImplementedError
 
     def __random(self, n_docs: int, n_words: int) -> ndarray:
         conditional = rand(self.__n_topics, n_docs, n_words)
-        return self._normalize(conditional)[0]
+        return self.__normalize(conditional)[0]
 
-    def _norm_sum(self, index_pattern: str) -> (ndarray, Norm):
-        probability = einsum(index_pattern, self._target, self._conditional)
-        return self._normalize(probability)
+    def _norm_sum(self, index_pattern: str) -> ndarray:
+        probability = einsum(index_pattern, self._doc_word, self._conditional)
+        return self.__normalize(probability)[0]
 
-    def _normalize(self, array: ndarray, norm: Norm = None) -> (ndarray, Norm):
+    def __normalize(self, array: ndarray, norm: Norm = None) -> (ndarray, Norm):
         norm = norm or array.sum(axis=0)
-        mask = norm < EPS
+        mask = norm < MACHINE_PRECISION
         array[..., mask] = 0.0
         norm[mask] = 1.0
         return self._safe_divide(array, norm), norm
 
     @staticmethod
     def _safe_divide(array: ndarray, number: Divisor) -> ndarray:
-        array[array < EPS] = 0.0
+        array[array < MACHINE_PRECISION] = 0.0
         return array / number
 
     def __rel_change(self, new: float) -> float:
@@ -84,4 +85,4 @@ class BasePLSA:
 
     def _invert(self, conditional: ndarray, marginal: ndarray) -> ndarray:
         inverted = conditional * marginal
-        return self._normalize(inverted.T)[0]
+        return self.__normalize(inverted.T)[0]
