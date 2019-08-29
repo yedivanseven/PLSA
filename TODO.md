@@ -1,5 +1,4 @@
 # TODO
-1. How many topics to chose?
 2. Use checkerpy!
 3. Make logger!
 4. Write dostrings!

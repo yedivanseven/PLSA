@@ -1,3 +1,6 @@
+import os
+import csv
+
 from collections import defaultdict
 from typing import Iterable, Dict
 from numpy import zeros, ndarray, log
@@ -24,6 +27,47 @@ class Corpus:
         n_docs = f'Number of documents: {self.n_docs}\n'
         n_words = f'Number of words:     {self.n_words}'
         return header + divider + n_docs + n_words
+
+    @classmethod
+    def from_csv(cls, path: str,
+                 pipeline: Pipeline,
+                 col: int = -1,
+                 encoding: str = 'latin_1',
+                 max_docs: int = 1000) -> 'Corpus':
+        docs = []
+        n_docs = 0
+        with open(path, encoding=encoding, newline='') as stream:
+            file = csv.reader(stream)
+            _ = next(file)
+            for line in file:
+                docs.append(line[col])
+                n_docs += 1
+                if n_docs >= max_docs:
+                    break
+        return cls(docs, pipeline)
+
+    @classmethod
+    def from_dir(cls, path: str,
+                 pipeline: Pipeline,
+                 encoding: str = 'latin_1',
+                 max_files: int = 100) -> 'Corpus':
+        path = path if path.endswith('/') else path + '/'
+        docs = []
+        filenames = os.listdir(path)
+        n_files = min(len(filenames), max_files)
+        for filename in filenames[:n_files]:
+            with open(path + filename, encoding=encoding) as file:
+                new_doc = False
+                for line in file:
+                    if '<post>' in line:
+                        doc = ''
+                        new_doc = True
+                    elif '</post>' in line:
+                        docs.append(doc)
+                        new_doc = False
+                    if new_doc and '<post>' not in line:
+                        doc += line.strip()
+        return cls(docs, pipeline)
 
     @property
     def raw(self) -> Iterable[str]:

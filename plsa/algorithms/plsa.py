@@ -10,7 +10,7 @@ class PLSA(BasePLSA):
         super().__init__(corpus, n_topics, tf_idf)
         self._word_given_topic = empty((corpus.n_words, n_topics))
 
-    def _update(self) -> None:
+    def _m_step(self) -> None:
         self._doc_given_topic = self._norm_sum('dw,tdw->dt')
         self._word_given_topic = self._norm_sum('dw,tdw->wt')
         self._topic = einsum('dw,tdw->t', self._doc_word, self._conditional)

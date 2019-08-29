@@ -42,8 +42,8 @@ class BasePLSA:
             warmup: int = 5) -> PlsaResult:
         n_iter = 0
         while n_iter < max_iter:
-            self._update()
-            self._conditional, self.__norm = self.__normalize(self._joint)
+            self._m_step()
+            self.__e_step()
             likelihood = (self._doc_word * log(self.__norm)).sum()
             n_iter += 1
             if n_iter > warmup and self.__rel_change(likelihood) < eps:
@@ -51,8 +51,11 @@ class BasePLSA:
             self._likelihoods.append(likelihood)
         return self._result()
 
-    def _update(self) -> None:
+    def _m_step(self) -> None:
         raise NotImplementedError
+
+    def __e_step(self) -> None:
+        self._conditional, self.__norm = self.__normalize(self._joint)
 
     def __random(self, n_docs: int, n_words: int) -> ndarray:
         conditional = rand(self.__n_topics, n_docs, n_words)

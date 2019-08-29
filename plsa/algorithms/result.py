@@ -45,7 +45,7 @@ class PlsaResult:
 
     @property
     def topic_given_doc(self) -> ndarray:
-        return self.__topic_given_doc
+        return self.__topic_given_doc.T
 
     @property
     def convergence(self) -> List[float]:

@@ -11,7 +11,7 @@ class ConditionalPLSA(BasePLSA):
         self._topic_given_word = empty((n_topics, corpus.n_words))
         self._word = corpus.get_word(tf_idf)
 
-    def _update(self) -> None:
+    def _m_step(self) -> None:
         self._doc_given_topic = self._norm_sum('dw,tdw->dt')
         self._topic_given_word = self._norm_sum('dw,tdw->tw')
         self._joint = einsum('dt,tw,w->tdw',
