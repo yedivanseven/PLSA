@@ -53,11 +53,12 @@ class Visualize:
         return axis.bar(self.__topic_range, self.__topic_given_doc[i_doc],
                         color=colors, tick_label=self.__topic_range)
 
-    def wordclouds(self, figure: Figure) -> None:
+    def wordclouds(self, figure: Figure) -> List[AxesImage]:
         n_rows = (self.__n_topics + 1) // 2
         axes = (figure.add_subplot(n_rows, 2, topic+1)
                 for topic in self.__topic_range)
         zipped = zip(self.__topic_range, axes)
-        _ = tuple(self.words_in_topic(topic, axis) for topic, axis in zipped)
+        imgs = list(self.words_in_topic(topic, axis) for topic, axis in zipped)
         figure.tight_layout()
+        return imgs
 
