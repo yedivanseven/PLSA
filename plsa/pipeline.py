@@ -42,7 +42,7 @@ class Pipeline:
         return self.__preprocessors[name][0]
 
     def process(self, doc: str) -> Tuple[str, ...]:
-        return self.__pipeline(doc)
+        return self.__pipeline(str(doc))
 
     @staticmethod
     def __name(thing: object) -> str:

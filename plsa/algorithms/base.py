@@ -54,6 +54,9 @@ class BasePLSA:
     def _m_step(self) -> None:
         raise NotImplementedError
 
+    def _result(self) -> PlsaResult:
+        raise NotImplementedError
+
     def __e_step(self) -> None:
         self._conditional, self.__norm = self.__normalize(self._joint)
 
@@ -82,9 +85,6 @@ class BasePLSA:
             old = self._likelihoods[-1]
             return abs((new - old) / new)
         return inf
-
-    def _result(self) -> PlsaResult:
-        raise NotImplementedError
 
     def _invert(self, conditional: ndarray, marginal: ndarray) -> ndarray:
         inverted = conditional * marginal

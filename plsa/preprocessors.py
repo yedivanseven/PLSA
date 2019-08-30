@@ -59,8 +59,8 @@ def remove_short_words(min_word_len: int) -> StrIter2Tuple:
 
 
 class RemoveStopwords:
-    def __init__(self, stopwords: Iterable[str]) -> None:
-        self.__stopwords = tuple(set(stopwords))
+    def __init__(self, stopwords: StrOrIter) -> None:
+        self.__stopwords = self.__normed(stopwords)
 
     def __repr__(self) -> str:
         title = self.__class__.__name__
@@ -73,18 +73,11 @@ class RemoveStopwords:
         return tuple(removed)
 
     def __add__(self, stopword: StrOrIter) -> 'RemoveStopwords':
-        if isinstance(stopword, str):
-            stopwords = self.__stopwords + (stopword,)
-        else:
-            stopwords = self.__stopwords + tuple(stopword)
+        stopwords = tuple(set(self.__stopwords + self.__normed(stopword)))
         return RemoveStopwords(stopwords)
 
     def __iadd__(self, stopword: StrOrIter) -> 'RemoveStopwords':
-        if isinstance(stopword, str):
-            self.__stopwords += (stopword,)
-        else:
-            self.__stopwords += tuple(stopword)
-        self.__stopwords = tuple(set(self.__stopwords))
+        self.__stopwords = tuple(set(self.__stopwords+self.__normed(stopword)))
         return self
 
     def __iter__(self) -> Iterator[str]:
@@ -95,15 +88,20 @@ class RemoveStopwords:
         return self.__stopwords
 
     @words.setter
-    def words(self, stopwords: Iterable[str]) -> None:
-        self.__stopwords = tuple(set(stopwords))
+    def words(self, stopwords: StrOrIter) -> None:
+        self.__stopwords = self.__normed(stopwords)
+
+    def __normed(self, stopwords: StrOrIter) -> Tuple[str, ...]:
+        if hasattr(stopwords, '__iter__') and not isinstance(stopwords, str):
+            return tuple(set(map(lambda x: str(x).lower(), stopwords)))
+        return str(stopwords).lower(),
 
 
 class LemmatizeWords:
     def __init__(self, *incl_pos: str) -> None:
-        self.__incl_pos = tuple(set(incl_pos))
-        self.__lemmatize = WordNetLemmatizer().lemmatize
         self.__pos_tag = {'JJ': 'a', 'VB': 'v', 'NN': 'n', 'RB': 'r'}
+        self.__incl_pos = self.__check(*incl_pos)
+        self.__lemmatize = WordNetLemmatizer().lemmatize
 
     def __repr__(self) -> str:
         title = self.__class__.__name__
@@ -123,18 +121,11 @@ class LemmatizeWords:
                      for f in filtered)
 
     def __add__(self, pos_tag: StrOrIter) -> 'LemmatizeWords':
-        if isinstance(pos_tag, str):
-            pos_tags = self.__incl_pos + (pos_tag,)
-        else:
-            pos_tags = self.__incl_pos + tuple(pos_tag)
+        pos_tags = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
         return LemmatizeWords(*pos_tags)
 
     def __iadd__(self, pos_tag: StrOrIter) -> 'LemmatizeWords':
-        if isinstance(pos_tag, str):
-            self.__incl_pos += (pos_tag,)
-        else:
-            self.__incl_pos += tuple(pos_tag)
-        self.__incl_pos = tuple(set(self.__incl_pos))
+        self.__incl_pos = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
         return self
 
     def __iter__(self) -> Iterator[str]:
@@ -145,5 +136,19 @@ class LemmatizeWords:
         return self.__incl_pos
 
     @types.setter
-    def types(self, incl_pos: Iterable[str]) -> None:
-        self.__incl_pos = tuple(set(incl_pos))
+    def types(self, pos_tag: StrOrIter) -> None:
+        self.__incl_pos = self.__checked(pos_tag)
+
+    def __checked(self, pos_tag: StrOrIter) -> Tuple[str, ...]:
+        if hasattr(pos_tag, '__iter__') and not isinstance(pos_tag, str):
+            return self.__check(*pos_tag)
+        return self.__check(pos_tag)
+
+    def __check(self, *tags: str) -> Tuple[str, ...]:
+        tags = tuple(set(map(lambda x: str(x).upper(), tags)))
+        for tag in tags:
+            if tag not in self.__pos_tag:
+                allowed_tags = tuple(self.__pos_tag.keys())
+                msg = f'Unknown pos tag {tag}. Must be one of {allowed_tags}!'
+                raise KeyError(msg)
+        return tags

@@ -10,7 +10,7 @@ from .algorithms import PlsaResult
 
 
 class Visualize:
-    def __init__(self, result: PlsaResult):
+    def __init__(self, result: PlsaResult) -> None:
         self.__convergence = result.convergence
         self.__topics = result.topic
         self.__word_given_topic = result.word_given_topic
