@@ -4,7 +4,6 @@ from functools import reduce
 from .preprocessors import *
 
 from nltk.corpus import stopwords
-from nltk import pos_tag
 
 
 DEFAULT_PIPELINE = (
@@ -14,15 +13,14 @@ DEFAULT_PIPELINE = (
     remove_tags('<[^>]*>'),
     remove_punctuation(string.punctuation),
     tokenize,
-    pos_tag,
-    LemmatizeWords('NN'),  # any or all of 'JJ', 'VB', 'NN', 'RB'
+    LemmatizeWords('NN'),
     RemoveStopwords(stopwords.words('english') + ['nbsp', 'amp', 'urllink']),
     remove_short_words(3)
 )
 
 
 class Pipeline:
-    def __init__(self, *preprocessors: Preprocessor) -> None:
+    def __init__(self, *preprocessors: PreprocessorT) -> None:
         self.__pipeline = reduce(lambda f, g: lambda x: g(f(x)), preprocessors)
         enumerated = enumerate(preprocessors)
         self.__preprocessors = {self.__name(p): (p, i) for i, p in enumerated}
@@ -35,10 +33,10 @@ class Pipeline:
         body = (f'{i}: {name}' for name, (_, i) in enumerated)
         return header + divider + '\n'.join(body)
 
-    def __getattr__(self, name) -> Preprocessor:
+    def __getattr__(self, name) -> PreprocessorT:
         return self.__preprocessors[name][0]
 
-    def __getitem__(self, name) -> Preprocessor:
+    def __getitem__(self, name) -> PreprocessorT:
         return self.__preprocessors[name][0]
 
     def process(self, doc: str) -> Tuple[str, ...]:

@@ -61,4 +61,3 @@ class Visualize:
         imgs = list(self.words_in_topic(topic, axis) for topic, axis in zipped)
         figure.tight_layout()
         return imgs
-

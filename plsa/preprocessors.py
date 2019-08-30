@@ -1,17 +1,34 @@
-import re
-from typing import Iterable, Tuple, Callable, Union, Iterator
+"""Preprocessors for documents and words.
 
-from nltk.stem import WordNetLemmatizer
+These preprocessors come in three flavours (functions, closures that return
+functions, and classes defining callable objects). The choice of the respective
+flavour is motivated by the complexity of the preprocessor. If it doesn't need
+any parameters, a simple function will do. If it is simple, does not need to be
+manipulated interactively, but needs some parameter(s), then a closure is fine.
+If it would be convenient to interact with the preprocessor interactively,
+then a class is a good choice.
 
+Preprocessors act either on an entire document string or, after splitting
+documents into individual words, on an iterable over words contained in a
+single document. Therefore, they cannot be combined in arbitrary order but
+care must be taken to ensure that the return value of one matches the
+call signature of the next.
+
+"""
 
 __all__ = ['remove_non_ascii', 'to_lower', 'remove_numbers', 'remove_tags',
            'remove_punctuation', 'tokenize', 'RemoveStopwords',
-           'LemmatizeWords', 'remove_short_words', 'Preprocessor']
+           'LemmatizeWords', 'remove_short_words', 'PreprocessorT']
 
-StrOrIter = Union[str, Iterable[str]]
-Str2Str = Callable[[str], str]
-StrIter2Tuple = Callable[[Iterable[str]], Tuple[str, ...]]
-Preprocessor = Union[Str2Str, StrIter2Tuple]
+import re
+from typing import Iterable, Tuple, Callable, Union, Iterator
+from nltk import pos_tag
+from nltk.stem import WordNetLemmatizer
+
+StrOrIterT = Union[str, Iterable[str]]
+Str2StrT = Callable[[str], str]
+StrIter2TupleT = Callable[[Iterable[str]], Tuple[str, ...]]
+PreprocessorT = Union[Str2StrT, StrIter2TupleT]
 
 
 def remove_non_ascii(doc: str) -> str:
@@ -27,7 +44,7 @@ def remove_numbers(doc: str) -> str:
     return ''.join(removed)
 
 
-def remove_tags(exclude_regex: str) -> Str2Str:
+def remove_tags(exclude_regex: str) -> Str2StrT:
     exclude_regex = re.compile(exclude_regex)
 
     def tag_remover(doc: str) -> str:
@@ -36,7 +53,7 @@ def remove_tags(exclude_regex: str) -> Str2Str:
     return tag_remover
 
 
-def remove_punctuation(punctuation: Iterable[str]) -> Str2Str:
+def remove_punctuation(punctuation: Iterable[str]) -> Str2StrT:
     translation = str.maketrans({character: ' ' for character in punctuation})
 
     def punctuation_remover(doc: str) -> str:
@@ -49,7 +66,7 @@ def tokenize(doc: str) -> Tuple[str, ...]:
     return tuple(doc.split())
 
 
-def remove_short_words(min_word_len: int) -> StrIter2Tuple:
+def remove_short_words(min_word_len: int) -> StrIter2TupleT:
 
     def short_word_remover(doc: Iterable[str]) -> Tuple[str, ...]:
         removed = filter(lambda word: len(word) >= min_word_len, doc)
@@ -59,7 +76,7 @@ def remove_short_words(min_word_len: int) -> StrIter2Tuple:
 
 
 class RemoveStopwords:
-    def __init__(self, stopwords: StrOrIter) -> None:
+    def __init__(self, stopwords: StrOrIterT) -> None:
         self.__stopwords = self.__normed(stopwords)
 
     def __repr__(self) -> str:
@@ -72,11 +89,11 @@ class RemoveStopwords:
         removed = filter(lambda word: word not in self.__stopwords, doc)
         return tuple(removed)
 
-    def __add__(self, stopword: StrOrIter) -> 'RemoveStopwords':
+    def __add__(self, stopword: StrOrIterT) -> 'RemoveStopwords':
         stopwords = tuple(set(self.__stopwords + self.__normed(stopword)))
         return RemoveStopwords(stopwords)
 
-    def __iadd__(self, stopword: StrOrIter) -> 'RemoveStopwords':
+    def __iadd__(self, stopword: StrOrIterT) -> 'RemoveStopwords':
         self.__stopwords = tuple(set(self.__stopwords+self.__normed(stopword)))
         return self
 
@@ -88,10 +105,10 @@ class RemoveStopwords:
         return self.__stopwords
 
     @words.setter
-    def words(self, stopwords: StrOrIter) -> None:
+    def words(self, stopwords: StrOrIterT) -> None:
         self.__stopwords = self.__normed(stopwords)
 
-    def __normed(self, stopwords: StrOrIter) -> Tuple[str, ...]:
+    def __normed(self, stopwords: StrOrIterT) -> Tuple[str, ...]:
         if hasattr(stopwords, '__iter__') and not isinstance(stopwords, str):
             return tuple(set(map(lambda x: str(x).lower(), stopwords)))
         return str(stopwords).lower(),
@@ -116,15 +133,15 @@ class LemmatizeWords:
         return header + divider + str(self.__incl_pos) + legend
 
     def __call__(self, doc: Iterable[str]) -> Tuple[str, ...]:
-        filtered = filter(lambda tag: tag[1][:2] in self.__incl_pos, doc)
-        return tuple(self.__lemmatize(f[0], self.__pos_tag[f[1][:2]])
-                     for f in filtered)
+        tagged = filter(lambda tag: tag[1][:2] in self.__incl_pos, pos_tag(doc))
+        return tuple(self.__lemmatize(word[0], self.__pos_tag[word[1][:2]])
+                     for word in tagged)
 
-    def __add__(self, pos_tag: StrOrIter) -> 'LemmatizeWords':
+    def __add__(self, pos_tag: StrOrIterT) -> 'LemmatizeWords':
         pos_tags = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
         return LemmatizeWords(*pos_tags)
 
-    def __iadd__(self, pos_tag: StrOrIter) -> 'LemmatizeWords':
+    def __iadd__(self, pos_tag: StrOrIterT) -> 'LemmatizeWords':
         self.__incl_pos = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
         return self
 
@@ -136,10 +153,10 @@ class LemmatizeWords:
         return self.__incl_pos
 
     @types.setter
-    def types(self, pos_tag: StrOrIter) -> None:
+    def types(self, pos_tag: StrOrIterT) -> None:
         self.__incl_pos = self.__checked(pos_tag)
 
-    def __checked(self, pos_tag: StrOrIter) -> Tuple[str, ...]:
+    def __checked(self, pos_tag: StrOrIterT) -> Tuple[str, ...]:
         if hasattr(pos_tag, '__iter__') and not isinstance(pos_tag, str):
             return self.__check(*pos_tag)
         return self.__check(pos_tag)
