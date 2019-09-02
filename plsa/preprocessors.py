@@ -32,50 +32,201 @@ PreprocessorT = Union[Str2StrT, StrIter2TupleT]
 
 
 def remove_non_ascii(doc: str) -> str:
-    return ''.join(char if ord(char) < 128 else ' ' for char in doc)
+    """Removes non-ASCII characters (i.e., with unicode > 127) from string.
+
+    Parameters
+    ----------
+    doc: str
+        A document given as a single string.
+
+    Returns
+    -------
+    str
+        The document as a single string with all characters of unicode > 127
+        removed.
+
+    """
+    return ''.join(char if ord(char) < 128 else ' ' for char in str(doc))
 
 
 def to_lower(doc: str) -> str:
-    return doc.lower()
+    """Converts string to all-lowercase.
+
+    Parameters
+    ----------
+    doc: str
+        A document given as a single string.
+
+    Returns
+    -------
+    str
+        The document as a single string with all characters
+        converted to lowercase.
+
+    """
+    return str(doc).lower()
 
 
 def remove_numbers(doc: str) -> str:
-    removed = filter(lambda character: not character.isdigit(), doc)
+    """Removes digit/number characters from strings.
+
+    Parameters
+    ----------
+    doc: str
+        A document given as a single string.
+
+    Returns
+    -------
+    str
+        The document as a single string with all number/digit characters
+        removed.
+
+    """
+    removed = filter(lambda character: not character.isdigit(), str(doc))
     return ''.join(removed)
 
 
 def remove_tags(exclude_regex: str) -> Str2StrT:
-    exclude_regex = re.compile(exclude_regex)
+    """Returns callable that removes matches to the given regular expression.
+
+    Parameters
+    ----------
+    exclude_regex: str
+        A regular expression specifying specific patterns to remove from a
+        document.
+
+    Returns
+    -------
+    function
+        A callable that removes patterns matching the given regular expression
+        from a string.
+
+    """
+    exclude_regex = re.compile(str(exclude_regex))
 
     def tag_remover(doc: str) -> str:
-        return re.sub(exclude_regex, ' ', doc)
+        """Removes matches to the given regular expression from string.
+
+        Parameters
+        ----------
+        doc: str
+            A document given as a single string.
+
+        Returns
+        -------
+        str
+            The document as a single string with all matches to the pattern
+            specified by `exclude_regex` removed.
+
+        """
+        return re.sub(exclude_regex, ' ', str(doc))
 
     return tag_remover
 
 
 def remove_punctuation(punctuation: Iterable[str]) -> Str2StrT:
-    translation = str.maketrans({character: ' ' for character in punctuation})
+    """Returns callable that removes punctuation characters from a string."
+
+    Parameters
+    ----------
+    punctuation: iterable of str
+        An iterable over single-character strings specifying punctuation
+        characters to remove from a document.
+
+    Returns
+    -------
+    function
+        A callable that removes the given punctuation characters from a string.
+
+    """
+    translation = str.maketrans({str(char): ' ' for char in punctuation})
 
     def punctuation_remover(doc: str) -> str:
+        """ Removes the given punctuation characters from a string.
+
+        Parameters
+        ----------
+        doc: str
+            A document given as a single string.
+
+        Returns
+        -------
+        str
+            The document as a single string with all punctuation characters
+            removed.
+
+        """
         return doc.translate(translation)
 
     return punctuation_remover
 
 
 def tokenize(doc: str) -> Tuple[str, ...]:
-    return tuple(doc.split())
+    """Splits a string into individual words.
+
+    Parameters
+    ----------
+    doc: str
+        A document given as a single string.
+
+    Returns
+    -------
+    tuple of str
+        The document as tuple of individual words.
+
+
+    """
+    return tuple(str(doc).split())
 
 
 def remove_short_words(min_word_len: int) -> StrIter2TupleT:
+    """Returns a callable that removes short words from an iterable of strings.
+
+    Parameters
+    ----------
+    min_word_len: int
+        Minimum number of characters in a word for it to be retained.
+
+    Returns
+    -------
+    function
+        A callable that removes words shorter than the given threshold from
+        an iterable over strings.
+
+    """
 
     def short_word_remover(doc: Iterable[str]) -> Tuple[str, ...]:
-        removed = filter(lambda word: len(word) >= min_word_len, doc)
+        """
+
+        Parameters
+        ----------
+        doc: iterable of str
+            A document given as an iterable over words.
+
+        Returns
+        -------
+        tuple of str
+            The document as tuple of strings with all words shorter than the
+            given threshold removed.
+
+        """
+        removed = filter(lambda word: len(word) >= int(min_word_len), str(doc))
         return tuple(removed)
 
     return short_word_remover
 
 
 class RemoveStopwords:
+    """Instantiate callable objects that remove stopwords from a document.
+
+    Parameters
+    ----------
+    stopwords: str or iterable of str
+        Stopword(s) to remove from a document given as an iterable
+        over words.
+
+    """
+
     def __init__(self, stopwords: StrOrIterT) -> None:
         self.__stopwords = self.__normed(stopwords)
 
@@ -86,6 +237,20 @@ class RemoveStopwords:
         return header + divider + str(self.__stopwords)
 
     def __call__(self, doc: Iterable[str]) -> Tuple[str, ...]:
+        """Remove stopwords from a document given as iterable over words.
+
+        Parameters
+        ----------
+        iterable of str
+            A document given as an iterable over words.
+
+        Returns
+        -------
+        tuple of str
+            The document as tuple of strings with all words on the stopword
+            list removed.
+
+        """
         removed = filter(lambda word: word not in self.__stopwords, doc)
         return tuple(removed)
 
@@ -102,6 +267,7 @@ class RemoveStopwords:
 
     @property
     def words(self) -> Tuple[str, ...]:
+        """The current stopwords."""
         return self.__stopwords
 
     @words.setter
@@ -109,12 +275,28 @@ class RemoveStopwords:
         self.__stopwords = self.__normed(stopwords)
 
     def __normed(self, stopwords: StrOrIterT) -> Tuple[str, ...]:
+        """Lowercase stopwords for both strings and iterables over strings."""
         if hasattr(stopwords, '__iter__') and not isinstance(stopwords, str):
             return tuple(set(map(lambda x: str(x).lower(), stopwords)))
         return str(stopwords).lower(),
 
 
 class LemmatizeWords:
+    """Instantiate callable objects that find the root form of words.
+
+    Parameters
+    ----------
+    *inc_pos: str
+        One or more positional tag(s) indicating the type(s) of words to retain
+        and to find the root form of. Must be one of 'JJ' (adjectives), 'NN'
+        (nouns), 'VB' (verbs), or 'RB' (adverbs).
+
+    Raises
+    ------
+    KeyError
+        If the given positional tags are not among the list of allowed ones.
+
+    """
     def __init__(self, *incl_pos: str) -> None:
         self.__pos_tag = {'JJ': 'a', 'VB': 'v', 'NN': 'n', 'RB': 'r'}
         self.__incl_pos = self.__check(*incl_pos)
@@ -133,16 +315,30 @@ class LemmatizeWords:
         return header + divider + str(self.__incl_pos) + legend
 
     def __call__(self, doc: Iterable[str]) -> Tuple[str, ...]:
+        """Find root forms of the words in a given document.
+
+        Parameters
+        ----------
+        doc: iterable of str
+            A document given as an iterable over words.
+
+        Returns
+        -------
+        tuple of str
+            The document as tuple of strings with all words replaced
+            by their root form.
+
+        """
         tagged = filter(lambda tag: tag[1][:2] in self.__incl_pos, pos_tag(doc))
         return tuple(self.__lemmatize(word[0], self.__pos_tag[word[1][:2]])
                      for word in tagged)
 
-    def __add__(self, pos_tag: StrOrIterT) -> 'LemmatizeWords':
-        pos_tags = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
-        return LemmatizeWords(*pos_tags)
+    def __add__(self, incl_pos: StrOrIterT) -> 'LemmatizeWords':
+        incl_pos = tuple(set(self.__incl_pos + self.__checked(incl_pos)))
+        return LemmatizeWords(*incl_pos)
 
-    def __iadd__(self, pos_tag: StrOrIterT) -> 'LemmatizeWords':
-        self.__incl_pos = tuple(set(self.__incl_pos + self.__checked(pos_tag)))
+    def __iadd__(self, incl_pos: StrOrIterT) -> 'LemmatizeWords':
+        self.__incl_pos = tuple(set(self.__incl_pos + self.__checked(incl_pos)))
         return self
 
     def __iter__(self) -> Iterator[str]:
@@ -150,18 +346,21 @@ class LemmatizeWords:
 
     @property
     def types(self) -> Tuple[str, ...]:
+        """The current type(s) of words to retain."""
         return self.__incl_pos
 
     @types.setter
-    def types(self, pos_tag: StrOrIterT) -> None:
-        self.__incl_pos = self.__checked(pos_tag)
+    def types(self, incl_pos: StrOrIterT) -> None:
+        self.__incl_pos = self.__checked(incl_pos)
 
-    def __checked(self, pos_tag: StrOrIterT) -> Tuple[str, ...]:
-        if hasattr(pos_tag, '__iter__') and not isinstance(pos_tag, str):
-            return self.__check(*pos_tag)
-        return self.__check(pos_tag)
+    def __checked(self, incl_pos: StrOrIterT) -> Tuple[str, ...]:
+        """Differentiate between a single string and an iterable of strings."""
+        if hasattr(incl_pos, '__iter__') and not isinstance(incl_pos, str):
+            return self.__check(*incl_pos)
+        return self.__check(incl_pos)
 
     def __check(self, *tags: str) -> Tuple[str, ...]:
+        """Convert pos tags to upper case and check if they are allowed."""
         tags = tuple(set(map(lambda x: str(x).upper(), tags)))
         for tag in tags:
             if tag not in self.__pos_tag:
