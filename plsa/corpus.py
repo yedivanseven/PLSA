@@ -9,6 +9,20 @@ from .pipeline import Pipeline
 
 
 class Corpus:
+    """Processes raw document collections and provides numeric representations.
+
+    Parameters
+    ----------
+    corpus: iterable of str
+        An iterable over documents given as a single string each.
+    pipeline: Pipeline
+        The preprocessing pipeline.
+
+    See Also
+    --------
+    plsa.pipeline
+
+    """
     def __init__(self, corpus: Iterable[str], pipeline: Pipeline) -> None:
         self.__pipeline = pipeline
         self.__raw = []
@@ -34,8 +48,33 @@ class Corpus:
                  col: int = -1,
                  encoding: str = 'latin_1',
                  max_docs: int = 1000) -> 'Corpus':
+        """Instantiate a corpus from documents in a column of a CSV file.
+
+        Parameters
+        ----------
+        path: str
+            Full path (incl. file name) to a CSV file with one column
+            containing documents.
+        pipeline:
+            The preprocessing pipeline.
+        col: int
+            Which column contains the documents. Numbering starts with 0 for
+            the first column. Negative numbers count back from the last
+            column (`e.g.`, -1 for last, -2 just before the last, `etc.`).
+        encoding: str
+            A valid python encoding used to read the documents.
+        max_docs: int
+            The maximum number of documents to read from file.
+
+        Notes
+        --------
+        A list of available encodings can be found at
+        https://docs.python.org/3/library/codecs.html
+
+
+        """
         docs, n_docs = [], 0
-        with open(path, encoding=encoding, newline='') as stream:
+        with open(str(path), encoding=encoding, newline='') as stream:
             file = csv.reader(stream)
             n_cols = len(next(file))
             col = min(sign(col) * min(abs(col), n_cols), n_cols - 1)
@@ -52,6 +91,28 @@ class Corpus:
                  tag: str = 'post',
                  encoding: str = 'latin_1',
                  max_files: int = 100) -> 'Corpus':
+        """Instantiate a corpus from elements of XML files in a directory.
+
+        Parameters
+        ----------
+        directory: str
+            Path to the directory with the XML files.
+        pipeline: Pipeline
+           The preprocessing pipeline.
+        tag:
+            The XML tag that opens (<...>) and closes (</...> the elements
+            containing documents.
+        encoding:
+            A valid python encoding used to read the documents.
+        max_files
+            The maximum number of XML files to read.
+
+        Notes
+        --------
+        A list of available encodings can be found at
+        https://docs.python.org/3/library/codecs.html
+
+        """
         directory = directory if directory.endswith('/') else directory + '/'
         filenames = os.listdir(directory)
         n_files = min(len(filenames), max_files)
@@ -74,29 +135,62 @@ class Corpus:
 
     @property
     def raw(self) -> Tuple[str, ...]:
+        """The raw documents as they were read from the source."""
         return tuple(self.__raw)
 
     @property
     def n_docs(self) -> int:
+        """The number of non-empty documents."""
         return self.__n_docs
 
     @property
     def n_words(self) -> int:
+        """The number of unique words retained after preprocessing."""
         return self.__n_words
 
     @property
     def vocabulary(self) -> Dict[int, str]:
+        """Mapping from numeric word index to actual word."""
         return self.__vocabulary
 
     @property
     def index(self) -> Dict[str, int]:
+        """Mapping from actual word to numeric word index."""
         return self.__index
 
     @property
     def n_occurrences(self) -> int:
+        """Total number of times any word occurred in any document."""
         return self.__n_occurrences
 
     def get_doc_word(self, tf_idf: bool) -> ndarray:
+        """The normalized document-word counts matrix.
+
+        Also referred to as the `term-frequency` matrix. Because words (or
+        `terms`) that occur in the majority of documents are the least helpful
+        in discriminating types of documents, each column of this matrix can be
+        multiplied by the logarithm of the total number of documents divided
+        by the number of documents containing the given word. The result is
+        then referred to as the `term-frequency inverse-document-frequency`
+        or `TF_IDF` matrix.
+
+        Either way, the returned matrix is always `normalized` such that it
+        can be interpreted as the joint document-word probability `p(d, w)`.
+
+        Parameters
+        ----------
+        tf_idf: bool
+            Whether to return the term-frequency inverse-document-frequency
+            or just the term-frequency matrix.
+
+        Returns
+        -------
+        ndarray
+            The normalized document (rows) - word (columns) matrix, either
+            as pure counts (if ``tf_idf`` = ``False``) or weighted by the
+            inverse document frequency (if ``tf_idf`` is ``False``).
+
+        """
         if tf_idf:
             idf = log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
             tf_idf = self.__doc_word * idf
@@ -104,12 +198,63 @@ class Corpus:
         return self.__doc_word / self.__n_occurrences
 
     def get_doc(self, tf_idf: bool) -> ndarray:
+        """The marginal probability that any word comes from a given document.
+
+        This probability `p(d)` is obtained by summing the joint document-
+        word probability `p(d, w)` over all words.
+
+        Parameters
+        ----------
+        tf_idf: bool
+            Whether to marginalize the term-frequency inverse-document-frequency
+            or just the term-frequency matrix.
+
+        Returns
+        -------
+        ndarray
+            The document probability `p(d)`.
+
+        """
         return self.get_doc_word(tf_idf).sum(axis=1)
 
     def get_word(self, tf_idf: bool) -> ndarray:
+        """The marginal probability of a particular word.
+
+        This probability `p(w)` is obtained by summing the joint document-
+        word probability `p(d, w)` over all documents.
+
+        Parameters
+        ----------
+        tf_idf: bool
+            Whether to marginalize the term-frequency inverse-document-frequency
+            or just the term-frequency matrix.
+
+        Returns
+        -------
+        ndarray
+            The word probability `p(w)`.
+
+        """
         return self.get_doc_word(tf_idf).sum(axis=0)
 
     def get_doc_given_word(self, tf_idf: bool) -> ndarray:
+        """The conditional probability of a particular word in a given document.
+
+        This probability `p(d|w)` is obtained by dividing the joint document-
+        word probability `p(d, w)` by the marginal word probability `p(w)`.
+
+        Parameters
+        ----------
+        tf_idf: bool
+            Whether base the conditional probability on the term-frequency
+            inverse-document-frequency or just the term-frequency matrix.
+
+        Returns
+        -------
+        ndarray
+            The conditional word probability `p(d|w)`.
+
+        """
         return self.get_doc_word(tf_idf) / self.get_word(tf_idf)
 
     def __generate_doc_word(self, corpus: Iterable[str]) -> None:

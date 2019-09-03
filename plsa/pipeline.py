@@ -20,6 +20,32 @@ DEFAULT_PIPELINE = (
 
 
 class Pipeline:
+    """Encapsulates and applies multiple document preprocessors.
+
+    Each preprocessor is assumed to be a callable that takes a single document
+    as input and produces a single document as output. Importantly, each
+    document fed to the first preprocessor in the chain is delivered as a
+    single string, while the last preprocessor is required to return it
+    as an iterable over strings with each element representing one word
+    of that document.
+
+    Other than that, preprocessors can be combined in any which way, provided
+    that the return value of one matches the call signature of the next. The
+    order in which they are applied is the order in which they are specified,
+    `i.e.`, from left to right.
+
+
+    Parameters
+    ----------
+    *preprocessors: callable
+        Function(s) or other callable object(s) that each take a single
+        document as input and produce a (processed) document as output.
+
+    See Also
+    --------
+    plsa.preprocessors
+
+    """
     def __init__(self, *preprocessors: PreprocessorT) -> None:
         self.__pipeline = reduce(lambda f, g: lambda x: g(f(x)), preprocessors)
         enumerated = enumerate(preprocessors)
@@ -40,6 +66,19 @@ class Pipeline:
         return self.__preprocessors[name][0]
 
     def process(self, doc: str) -> Tuple[str, ...]:
+        """Applies a chain of one or more preprocessors to a document.
+
+        Parameters
+        ----------
+        doc: str
+            A text document given as a single string.
+
+        Returns
+        -------
+        tuple of str
+            Each element represents one word of the document.
+
+        """
         return self.__pipeline(str(doc))
 
     @staticmethod

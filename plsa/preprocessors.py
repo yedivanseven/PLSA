@@ -156,7 +156,7 @@ def remove_punctuation(punctuation: Iterable[str]) -> Str2StrT:
             removed.
 
         """
-        return doc.translate(translation)
+        return str(doc).translate(translation)
 
     return punctuation_remover
 
@@ -251,7 +251,7 @@ class RemoveStopwords:
             list removed.
 
         """
-        removed = filter(lambda word: word not in self.__stopwords, doc)
+        removed = filter(lambda word: str(word) not in self.__stopwords, doc)
         return tuple(removed)
 
     def __add__(self, stopword: StrOrIterT) -> 'RemoveStopwords':
