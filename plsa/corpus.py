@@ -246,7 +246,7 @@ class Corpus:
         Parameters
         ----------
         tf_idf: bool
-            Whether base the conditional probability on the term-frequency
+            Whether to base the conditional probability on the term-frequency
             inverse-document-frequency or just the term-frequency matrix.
 
         Returns

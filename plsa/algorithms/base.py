@@ -19,14 +19,14 @@ class BasePLSA:
 
     """
     def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
-        self.__n_topics = n_topics
+        self.__n_topics = abs(int(n_topics))
         self._vocabulary = corpus.vocabulary
         self._doc_word = corpus.get_doc_word(tf_idf)
-        self._joint = empty((n_topics, corpus.n_docs, corpus.n_words))
+        self._joint = empty((self.__n_topics, corpus.n_docs, corpus.n_words))
         self._conditional = self.__random(corpus.n_docs, corpus.n_words)
-        self.__norm = empty((corpus.n_docs, n_topics))
-        self._doc_given_topic = empty((corpus.n_docs, n_topics))
-        self._topic = empty(n_topics)
+        self.__norm = empty((corpus.n_docs, self.__n_topics))
+        self._doc_given_topic = empty((corpus.n_docs, self.__n_topics))
+        self._topic = empty(self.__n_topics)
         self._likelihoods = []
 
     def __repr__(self) -> str:
