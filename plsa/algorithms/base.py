@@ -14,8 +14,8 @@ class BasePLSA:
     """Base class for all flavours of PLSA algorithms.
 
     Since the base class for all algorithms is not supposed to ever be
-    instantiated directly, it is also not documented. For more, please refer
-    to the of the individual algorithms.
+    instantiated directly, it is also not documented. For more information,
+    please refer to the docstrings of the individual algorithms.
 
     """
     def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
