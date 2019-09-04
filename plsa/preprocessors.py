@@ -210,7 +210,7 @@ def remove_short_words(min_word_len: int) -> StrIter2TupleT:
             given threshold removed.
 
         """
-        removed = filter(lambda word: len(word) >= int(min_word_len), str(doc))
+        removed = filter(lambda word: len(word) >= int(min_word_len), doc)
         return tuple(removed)
 
     return short_word_remover

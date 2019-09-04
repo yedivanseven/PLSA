@@ -271,4 +271,4 @@ class Corpus:
         self.__doc_word = zeros((self.__n_docs, self.__n_words))
         for (doc, word), count in doc_word_dict.items():
             self.__doc_word[doc, word] = count
-        self.__n_occurrence = int(self.__doc_word.sum())
+        self.__n_occurrences = int(self.__doc_word.sum())
