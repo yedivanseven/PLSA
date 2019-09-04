@@ -139,6 +139,11 @@ class Corpus:
         return tuple(self.__raw)
 
     @property
+    def pipeline(self) -> Pipeline:
+        """The pipeline of preprocessors for each document."""
+        return self.__pipeline
+
+    @property
     def n_docs(self) -> int:
         """The number of non-empty documents."""
         return self.__n_docs
@@ -165,7 +170,7 @@ class Corpus:
 
     @property
     def idf(self) -> ndarray:
-        """Logarithm of fraction of documents each word occurs in."""
+        """Logarithm of the fraction of documents each word occurs in."""
         return log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
 
     def get_doc_word(self, tf_idf: bool) -> ndarray:

@@ -19,15 +19,17 @@ class BasePLSA:
 
     """
     def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
+        self._corpus = corpus
         self.__n_topics = abs(int(n_topics))
-        self._vocabulary = corpus.vocabulary
+        self.__tf_idf = bool(tf_idf)
         self._doc_word = corpus.get_doc_word(tf_idf)
         self._joint = empty((self.__n_topics, corpus.n_docs, corpus.n_words))
         self._conditional = self.__random(corpus.n_docs, corpus.n_words)
         self.__norm = empty((corpus.n_docs, self.__n_topics))
         self._doc_given_topic = empty((corpus.n_docs, self.__n_topics))
         self._topic = empty(self.__n_topics)
-        self._likelihoods = []
+        self.__entropy = self.__compute_entropy()
+        self._kl_divergences = []
 
     def __repr__(self) -> str:
         title = self.__class__.__name__
@@ -36,7 +38,7 @@ class BasePLSA:
         n_topics = f'Number of topics:     {self.__n_topics}\n'
         n_docs = f'Number of documents:  {self._doc_word.shape[0]}\n'
         n_words = f'Number of words:      {self._doc_word.shape[1]}\n'
-        iterations = f'Number of iterations: {len(self._likelihoods)}'
+        iterations = f'Number of iterations: {len(self._kl_divergences)}'
         body = n_topics + n_docs + n_words + iterations
         return header + divider + body
 
@@ -45,14 +47,21 @@ class BasePLSA:
         """The number of topics to find."""
         return self.__n_topics
 
+    @property
+    def tf_idf(self) -> bool:
+        """Use inverse document frequency to weigh term frequencies?"""
+        return self.__tf_idf
+
     def fit(self, eps: float = 1e-5,
             max_iter: int = 200,
             warmup: int = 5) -> PlsaResult:
         """Run EM-style training to find latent topic in documents.
 
         Expectation-maximization (EM) iterates until either the maximum number
-        of iterations is reached or if relative changes of the log-likelihood
-        fall below a certain threshold, whichever occurs first.
+        of iterations is reached or if relative changes of the Kullback-
+        Leibler divergence between the actual document-word probability
+        and its approximate fall below a certain threshold, whichever
+        occurs first.
 
         Since all quantities are update in-place, calling the ``fit`` method
         again after a successful run (possibly with changed convergence
@@ -68,8 +77,9 @@ class BasePLSA:
         Parameters
         ----------
         eps: float, optional
-            The convergence cutoff for relative changes in the log-likelihood.
-            Defaults to 1e-5
+            The convergence cutoff for relative changes in the Kullback-
+            Leibler divergence between the actual document-word probability
+            and its approximate. Defaults to 1e-5
         max_iter: int, optional
             The maximum number of iterations to perform. Defaults to 200.
         warmup: int, optional
@@ -90,10 +100,11 @@ class BasePLSA:
             self._m_step()
             self.__e_step()
             likelihood = (self._doc_word * log(self.__norm)).sum()
+            kl_divergence = self.__entropy - likelihood
             n_iter += 1
-            if n_iter > warmup and self.__rel_change(likelihood) < eps:
+            if n_iter > warmup and self.__rel_change(kl_divergence) < eps:
                 break
-            self._likelihoods.append(likelihood)
+            self._kl_divergences.append(kl_divergence)
         return self._result()
 
     def _m_step(self) -> None:
@@ -124,24 +135,17 @@ class BasePLSA:
         probability = einsum(index_pattern, self._doc_word, self._conditional)
         return self.__normalize(probability)[0]
 
-    def __normalize(self, array: ndarray, norm: Norm = None) -> (ndarray, Norm):
+    def __normalize(self, array: ndarray) -> (ndarray, Norm):
         """Normalize probability without underflow or divide-by-zero errors."""
-        norm = norm or array.sum(axis=0)
-        mask = norm < MACHINE_PRECISION
-        array[..., mask] = 0.0
-        norm[mask] = 1.0
-        return self._safe_divide(array, norm), norm
-
-    @staticmethod
-    def _safe_divide(array: ndarray, divisor: Divisor) -> ndarray:
-        """Divide a numpy array without running into underflow errors."""
-        array[array < MACHINE_PRECISION] = 0.0
-        return array / divisor
+        norm = array.sum(axis=0)
+        array[array <= MACHINE_PRECISION] = 0.0
+        norm[norm <= MACHINE_PRECISION] = 1.0
+        return array / norm, norm
 
     def __rel_change(self, new: float) -> float:
         """Return the relative change in the log-likelihood."""
-        if self._likelihoods:
-            old = self._likelihoods[-1]
+        if self._kl_divergences:
+            old = self._kl_divergences[-1]
             return abs((new - old) / new)
         return inf
 
@@ -149,3 +153,9 @@ class BasePLSA:
         """Perform a Bayesian inversion of a conditional probability."""
         inverted = conditional * marginal
         return self.__normalize(inverted.T)[0]
+
+    def __compute_entropy(self) -> float:
+        """Compute entropy of original document-word matrix."""
+        p = self._doc_word.copy()
+        p[p <= MACHINE_PRECISION] = 1.0
+        return (p * log(p)).sum()

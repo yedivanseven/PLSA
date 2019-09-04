@@ -30,6 +30,7 @@ class Visualize:
         self.__n_topics = result.n_topics
         self.__topic_range = range(result.n_topics)
         self.__topic_given_doc = result.topic_given_doc
+        self.__predict = result.predict
         self.__wordcloud = WordCloud(background_color='white')
 
     def __repr__(self) -> str:
@@ -43,7 +44,11 @@ class Visualize:
         return header + divider + body
 
     def convergence(self, axis: Subplot) -> List[Line2D]:
-        """Plot the convergence of the log-likelihood from a PLSA fit.
+        """Plot the convergence of the PLSA run.
+
+        The quantity to be minimized is the Kullback-Leibler divergence
+        between the original document-word matrix and its approximation
+        given by the (conditional) PLSA factorization.
 
         Parameters
         ----------
@@ -56,7 +61,7 @@ class Visualize:
             The line object plotted into the given axis.
 
         """
-        axis.set(xlabel='Iteration', ylabel='Log-likelihood')
+        axis.set(xlabel='Iteration', ylabel='Kullback-Leibler divergence')
         return axis.plot(self.__convergence)
 
     def topics(self, axis: Subplot) -> BarContainer:
@@ -109,7 +114,7 @@ class Visualize:
         i_doc: int
             Index of the document to plot. Numbering starts at 0.
         axis: Subplot
-            The matplotlib axis to plot into
+            The matplotlib axis to plot into.
 
         Returns
         -------
@@ -143,3 +148,26 @@ class Visualize:
         imgs = list(self.words_in_topic(topic, axis) for topic, axis in zipped)
         figure.tight_layout()
         return imgs
+
+    def prediction(self, doc: str, axis: Subplot) -> BarContainer:
+        """Plot the predicted relative weights of topics in a new document.
+
+        Parameters
+        ----------
+        doc: str
+            A new document given as a single string.
+        axis: Subplot
+            The matplotlib axis to plot into.
+
+        Returns
+        -------
+        BarContainer
+            The container for the bars plotted into the given axis.
+
+        """
+        colors = [f'C{color}' for color in self.__topic_range]
+        prediction, n_unknown_words, _ = self.__predict(doc)
+        axis.set(xlabel='Topic', ylabel='Importance')
+        axis.set_title(f'Number of unknown words: {n_unknown_words}')
+        return axis.bar(self.__topic_range, prediction, color=colors,
+                        tick_label=self.__topic_range)

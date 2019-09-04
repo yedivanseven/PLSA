@@ -1,5 +1,7 @@
 from typing import List, Dict, Tuple, Callable
-from numpy import newaxis, arange, ndarray
+from numpy import newaxis, arange, ndarray, zeros
+
+from ..corpus import Corpus
 
 TuplesT = Tuple[Tuple[str, float], ...]
 
@@ -7,17 +9,22 @@ TuplesT = Tuple[Tuple[str, float], ...]
 class PlsaResult:
     def __init__(self, topic_given_doc: ndarray,
                  word_given_topic: ndarray,
+                 topic_given_word: ndarray,
                  topic: ndarray,
-                 likelihoods: List[float],
-                 vocabulary: Dict[int, str]) -> None:
+                 kl_divergences: List[float],
+                 corpus: Corpus,
+                 tf_idf: bool) -> None:
         self.__n_topics = topic.size
-        self.__likelihoods = likelihoods
+        self.__kl_divergences = kl_divergences
+        self.__corpus = corpus
+        self.__tf_idf = tf_idf
         self.__topic, topic_order = self.__ordered_topic(topic)
         self.__topic_given_doc = topic_given_doc[topic_order]
+        self.__topic_given_word = topic_given_word[topic_order]
         word_given_topic = word_given_topic[:, topic_order]
         word_given_topic, word_order = self.__sorted(word_given_topic)
         zipped = self.__zipped(word_order, word_given_topic)
-        tuples = self.__tuples(vocabulary)
+        tuples = self.__tuples(corpus.vocabulary)
         topics = range(topic.size)
         self.__word_given_topic = tuple(tuples(zipped(t)) for t in topics)
 
@@ -36,6 +43,10 @@ class PlsaResult:
         return self.__n_topics
 
     @property
+    def tf_idf(self) -> bool:
+        return self.__tf_idf
+
+    @property
     def topic(self) -> ndarray:
         return self.__topic
 
@@ -49,7 +60,22 @@ class PlsaResult:
 
     @property
     def convergence(self) -> List[float]:
-        return self.__likelihoods
+        return self.__kl_divergences
+
+    def predict(self, doc: str) -> (ndarray, int, Tuple[str, ...]):
+        processed = self.__corpus.pipeline.process(doc)
+        encoded = zeros(self.__corpus.n_words + 1)
+        new_words = []
+        for word in processed:
+            index = self.__corpus.index.get(word, self.__corpus.n_words)
+            encoded[index] += 1
+            if index == self.__corpus.n_words:
+                new_words.append(word)
+        encoded, n_new_words = encoded[:-1], int(encoded[-1])
+        encoded = encoded * self.__corpus.idf if self.__tf_idf else encoded
+        encoded /= encoded.sum()
+        new_words = tuple(new_words)
+        return self.__topic_given_word.dot(encoded), n_new_words, new_words
 
     def __ordered_topic(self, topic: ndarray) -> (ndarray, ndarray):
         topic, topic_order = self.__sorted(topic[:, newaxis])

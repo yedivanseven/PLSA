@@ -23,6 +23,8 @@ class ConditionalPLSA(BasePLSA):
     def _result(self) -> PlsaResult:
         return PlsaResult(self._invert(self._doc_given_topic, self._topic),
                           self._invert(self._topic_given_word, self._word),
+                          self._topic_given_word,
                           self._topic,
-                          self._likelihoods,
-                          self._vocabulary)
+                          self._kl_divergences,
+                          self._corpus,
+                          self.tf_idf)

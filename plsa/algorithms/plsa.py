@@ -8,6 +8,9 @@ from .base import BasePLSA
 class PLSA(BasePLSA):
     """Implements probabilistic latent semantic analysis (PLSA).
 
+    At its core lies the assumption that the normalized document-word
+    (or term-frequency) matrix `p(d, w)` can be fact
+
     Parameters
     ----------
     corpus: Corpus
@@ -53,6 +56,8 @@ class PLSA(BasePLSA):
         """Prepares result with inverted doc-given-topic probability."""
         return PlsaResult(self._invert(self._doc_given_topic, self._topic),
                           self._word_given_topic,
+                          self._invert(self._word_given_topic, self._topic),
                           self._topic,
-                          self._likelihoods,
-                          self._vocabulary)
+                          self._kl_divergences,
+                          self._corpus,
+                          self.tf_idf)
