@@ -163,6 +163,11 @@ class Corpus:
         """Total number of times any word occurred in any document."""
         return self.__n_occurrences
 
+    @property
+    def idf(self) -> ndarray:
+        """Logarithm of fraction of documents each word occurs in."""
+        return log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
+
     def get_doc_word(self, tf_idf: bool) -> ndarray:
         """The normalized document-word counts matrix.
 
@@ -192,9 +197,8 @@ class Corpus:
 
         """
         if tf_idf:
-            idf = log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
-            tf_idf = self.__doc_word * idf
-            return tf_idf / tf_idf.sum()
+            not_normalized = self.__doc_word * self.idf
+            return not_normalized / not_normalized.sum()
         return self.__doc_word / self.__n_occurrences
 
     def get_doc(self, tf_idf: bool) -> ndarray:
