@@ -18,10 +18,6 @@ class Visualize:
         The results object returned by the ``fit`` method of a PLSA
         model object.
 
-    See Also
-    --------
-    plsa.algorithms.result
-
     """
     def __init__(self, result: PlsaResult) -> None:
         self.__convergence = result.convergence

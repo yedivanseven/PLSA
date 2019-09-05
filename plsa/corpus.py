@@ -100,7 +100,7 @@ class Corpus:
         pipeline: Pipeline
            The preprocessing pipeline.
         tag:
-            The XML tag that opens (<...>) and closes (</...> the elements
+            The XML tag that opens (<...>) and closes (</...>) the elements
             containing documents.
         encoding:
             A valid python encoding used to read the documents.
@@ -182,7 +182,7 @@ class Corpus:
         multiplied by the logarithm of the total number of documents divided
         by the number of documents containing the given word. The result is
         then referred to as the `term-frequency inverse-document-frequency`
-        or `TF_IDF` matrix.
+        or `TF-IDF` matrix.
 
         Either way, the returned matrix is always `normalized` such that it
         can be interpreted as the joint document-word probability `p(d, w)`.

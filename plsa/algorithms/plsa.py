@@ -9,7 +9,10 @@ class PLSA(BasePLSA):
     """Implements probabilistic latent semantic analysis (PLSA).
 
     At its core lies the assumption that the normalized document-word
-    (or term-frequency) matrix `p(d, w)` can be fact
+    (or term-frequency) matrix `p(d, w)`, weighted with the inverse document
+    frequency or not, can be factorized as:
+
+    .. math:: p(d, w)\\approx\sum_t \\tilde{p}(d|t)\\tilde{p}(w|t)\\tilde{p}(t)
 
     Parameters
     ----------
@@ -30,7 +33,9 @@ class PLSA(BasePLSA):
     a certain document, one first needs to find the joint probability of
     all random variables as
 
-    .. math:: p(t, d, w) = p(d|t)p(w|t)p(t)
+    .. math:: \\tilde{p}(t, d, w) = \\tilde{p}(d|t)\\tilde{p}(w|t)\\tilde{p}(t)
+
+    and then divide by the marginal :math:`\\tilde{p}(d, w)`.
 
     References
     ----------

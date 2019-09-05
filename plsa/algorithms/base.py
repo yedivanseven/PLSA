@@ -28,7 +28,7 @@ class BasePLSA:
         self.__norm = empty((corpus.n_docs, self.__n_topics))
         self._doc_given_topic = empty((corpus.n_docs, self.__n_topics))
         self._topic = empty(self.__n_topics)
-        self.__entropy = self.__compute_entropy()
+        self.__negative_entropy = self.__negative_entropy()
         self._kl_divergences = []
 
     def __repr__(self) -> str:
@@ -49,13 +49,13 @@ class BasePLSA:
 
     @property
     def tf_idf(self) -> bool:
-        """Use inverse document frequency to weigh term frequencies?"""
+        """Use inverse document frequency to weigh the document-word counts?"""
         return self.__tf_idf
 
     def fit(self, eps: float = 1e-5,
             max_iter: int = 200,
             warmup: int = 5) -> PlsaResult:
-        """Run EM-style training to find latent topic in documents.
+        """Run EM-style training to find latent topics in documents.
 
         Expectation-maximization (EM) iterates until either the maximum number
         of iterations is reached or if relative changes of the Kullback-
@@ -69,9 +69,9 @@ class BasePLSA:
         quo rather than starting all over again from scratch.
 
         Because a few EM iterations are needed to get things going, you can
-        specify an initial `warm-up` period during which progress in the
-        log-likelihood is not tracked and which does not count towards the
-        maximum number of iterations.
+        specify an initial `warm-up` period, during which progress in the
+        Kullback-Leibler divergence is not tracked, and which does not count
+        towards the maximum number of iterations.
 
 
         Parameters
@@ -84,7 +84,7 @@ class BasePLSA:
             The maximum number of iterations to perform. Defaults to 200.
         warmup: int, optional
             The number of iterations to perform before changes in the
-            log-likelihood are tracked for convergence.
+            Kullback-Leibler divergence are tracked for convergence.
 
         Returns
         -------
@@ -100,7 +100,7 @@ class BasePLSA:
             self._m_step()
             self.__e_step()
             likelihood = (self._doc_word * log(self.__norm)).sum()
-            kl_divergence = self.__entropy - likelihood
+            kl_divergence = self.__negative_entropy - likelihood
             n_iter += 1
             if n_iter > warmup and self.__rel_change(kl_divergence) < eps:
                 break
@@ -143,7 +143,7 @@ class BasePLSA:
         return array / norm, norm
 
     def __rel_change(self, new: float) -> float:
-        """Return the relative change in the log-likelihood."""
+        """Return the relative change in the Kullback-Leibler divergence."""
         if self._kl_divergences:
             old = self._kl_divergences[-1]
             return abs((new - old) / new)
@@ -154,8 +154,8 @@ class BasePLSA:
         inverted = conditional * marginal
         return self.__normalize(inverted.T)[0]
 
-    def __compute_entropy(self) -> float:
-        """Compute entropy of original document-word matrix."""
+    def __negative_entropy(self) -> float:
+        """Compute the negative entropy of the original document-word matrix."""
         p = self._doc_word.copy()
         p[p <= MACHINE_PRECISION] = 1.0
         return (p * log(p)).sum()

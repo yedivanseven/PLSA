@@ -5,4 +5,3 @@ plsa.algorithms.conditional\_plsa module
    :members:
    :inherited-members:
    :undoc-members:
-   :show-inheritance:

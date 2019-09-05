@@ -1,15 +1,15 @@
 """Preprocessors for documents and words.
 
 These preprocessors come in three flavours (functions, closures that return
-functions, and classes defining callable objects). The choice of the respective
+functions, and classes defining callable objects). The choice for the respective
 flavour is motivated by the complexity of the preprocessor. If it doesn't need
 any parameters, a simple function will do. If it is simple, does not need to be
 manipulated interactively, but needs some parameter(s), then a closure is fine.
-If it would be convenient to interact with the preprocessor interactively,
+If it would be convenient to alter parameters of the preprocessor interactively,
 then a class is a good choice.
 
 Preprocessors act either on an entire document string or, after splitting
-documents into individual words, on an iterable over words contained in a
+documents into individual words, on an iterable over the words contained in a
 single document. Therefore, they cannot be combined in arbitrary order but
 care must be taken to ensure that the return value of one matches the
 call signature of the next.
@@ -32,7 +32,7 @@ PreprocessorT = Union[Str2StrT, StrIter2TupleT]
 
 
 def remove_non_ascii(doc: str) -> str:
-    """Removes non-ASCII characters (i.e., with unicode > 127) from string.
+    """Removes non-ASCII characters (i.e., with unicode > 127) from a string.
 
     Parameters
     ----------
@@ -50,7 +50,7 @@ def remove_non_ascii(doc: str) -> str:
 
 
 def to_lower(doc: str) -> str:
-    """Converts string to all-lowercase.
+    """Converts a string to all-lowercase.
 
     Parameters
     ----------
@@ -68,7 +68,7 @@ def to_lower(doc: str) -> str:
 
 
 def remove_numbers(doc: str) -> str:
-    """Removes digit/number characters from strings.
+    """Removes digit/number characters from a string.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def remove_tags(exclude_regex: str) -> Str2StrT:
     exclude_regex = re.compile(str(exclude_regex))
 
     def tag_remover(doc: str) -> str:
-        """Removes matches to the given regular expression from string.
+        """Removes matches to the given regular expression from a string.
 
         Parameters
         ----------
@@ -225,6 +225,25 @@ class RemoveStopwords:
         Stopword(s) to remove from a document given as an iterable
         over words.
 
+    Examples
+    --------
+    >>> from plsa.preprocessors import RemoveStopwords
+    >>> remover = RemoveStopwords('is')
+    >>> remover.words
+    ('is',)
+
+    >>> remover.words = 'the', 'are'
+    >>> remover.words
+    ('the', 'are')
+
+    >>> remover += 'is', 'we'
+    >>> remover.words
+    ('is', 'we', 'the', 'are')
+
+    >>> new_instance = remover + 'do'
+    >>> new_instance.words
+    ('are', 'we', 'is', 'do', 'the')
+
     """
 
     def __init__(self, stopwords: StrOrIterT) -> None:
@@ -296,6 +315,25 @@ class LemmatizeWords:
     KeyError
         If the given positional tags are not among the list of allowed ones.
 
+    Examples
+    --------
+    >>> from plsa.preprocessors import LemmatizeWords
+    >>> lemmatizer = LemmatizeWords('VB')
+    >>> lemmatizer.types
+    ('VB',)
+
+    >>> lemmatizer.types = 'jj', 'nn'
+    >>> lemmatizer.types
+    ('JJ', 'NN')
+
+    >>> lemmatizer += 'VB', 'NN'
+    >>> lemmatizer.types
+    ('JJ', 'NN', 'VB')
+
+    >>> new_instance = lemmatizer + 'RB'
+    >>> new_instance.types
+    ('JJ', 'RB', 'NN', 'VB')
+
     """
     def __init__(self, *incl_pos: str) -> None:
         self.__pos_tag = {'JJ': 'a', 'VB': 'v', 'NN': 'n', 'RB': 'r'}
@@ -319,14 +357,16 @@ class LemmatizeWords:
 
         Parameters
         ----------
-        doc: iterable of str
-            A document given as an iterable over words.
+        doc: iterable over 2-tuples of str
+            A document given as an iterable over over 2-tuples of strings with
+            the first string a word and the second a positional tag. Only words
+            with positional tags 'JJ', 'VB', 'NN', and/or 'RB' are retained.
 
         Returns
         -------
         tuple of str
-            The document as tuple of strings with all words replaced
-            by their root form.
+            The document as tuple of strings with all words matching
+            the given positional tag(s) replaced by their root form.
 
         """
         tagged = filter(lambda tag: tag[1][:2] in self.__incl_pos, pos_tag(doc))
