@@ -1,0 +1,33 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='plsa',
+    version='0.1.0',
+    description='Probabilistic Latent Semantic Analysis',
+    url='https://github.com/yedivanseven/PLSA',
+    download_url='https://pypi.python.org/pypi/plsa',
+    author='Georg Heimel',
+    author_email='georg@muckisnspirit.com',
+    license='',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Software Development'
+    ],
+    keywords='nlp bag-of-words',
+    packages=find_packages(include=['plsa', 'plsa.*']),
+    project_urls={
+        'Documentation': 'https://probabilistic-latent-semantic-analysis.readthedocs.io/en/latest/index.html'
+    },
+    install_requires=[
+        'matplotlib>=3.0',
+        'nltk>=3.4.5',
+        'numpy',
+        'wordcloud>=1.5'
+    ]
+)
