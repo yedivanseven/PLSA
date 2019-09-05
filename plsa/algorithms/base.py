@@ -79,7 +79,7 @@ class BasePLSA:
         eps: float, optional
             The convergence cutoff for relative changes in the Kullback-
             Leibler divergence between the actual document-word probability
-            and its approximate. Defaults to 1e-5
+            and its approximate. Defaults to 1e-5.
         max_iter: int, optional
             The maximum number of iterations to perform. Defaults to 200.
         warmup: int, optional

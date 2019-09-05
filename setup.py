@@ -35,7 +35,7 @@ setup(
     install_requires=[
         'matplotlib>=3.0',
         'nltk>=3.4.5',
-        'numpy',
+        'numpy>=1.16',
         'wordcloud>=1.5'
     ]
 )
