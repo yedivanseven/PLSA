@@ -1,9 +1,16 @@
+from os import path
 from setuptools import setup, find_packages
+
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='plsa',
-    version='0.1.0',
+    version='0.1.1',
     description='Probabilistic Latent Semantic Analysis',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/yedivanseven/PLSA',
     download_url='https://pypi.python.org/pypi/plsa',
     author='Georg Heimel',
@@ -17,7 +24,8 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Topic :: Software Development'
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Text Processing'
     ],
     keywords='nlp bag-of-words',
     packages=find_packages(include=['plsa', 'plsa.*']),
