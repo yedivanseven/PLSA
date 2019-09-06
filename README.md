@@ -6,8 +6,8 @@ _A `python` implementation of Probabilistic Latent Semantic Analysis_
 Broadly speaking,
 [PLSA](https://en.wikipedia.org/wiki/Probabilistic_latent_semantic_analysis)
 is a tool of
-[Natural language processing](https://en.wikipedia.org/wiki/Natural_language_processing).
-It analyses a collection of text documents (a _corpus_) under the assumption
+[Natural Language Processing](https://en.wikipedia.org/wiki/Natural_language_processing).
+(NLP). It analyses a collection of text documents (a _corpus_) under the assumption
 that there are (by far) fewer _topics_ to write about than there are documents
 in the corpus. It then tries to identify these topics (in terms of words and
 their relative importance to each topic) and to give you the relative
