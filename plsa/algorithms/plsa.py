@@ -43,7 +43,7 @@ class PLSA(BasePLSA):
        Press, 2012).
 
     """
-    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
+    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = True):
         super().__init__(corpus, n_topics, tf_idf)
         self._word_given_topic = empty((corpus.n_words, self.n_topics))
 

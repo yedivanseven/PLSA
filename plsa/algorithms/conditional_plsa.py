@@ -50,7 +50,7 @@ class ConditionalPLSA(BasePLSA):
 
 
     """
-    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
+    def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = True):
         super().__init__(corpus, n_topics, tf_idf)
         self._topic_given_word = empty((n_topics, corpus.n_words))
         self._word = corpus.get_word(tf_idf)
