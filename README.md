@@ -56,7 +56,7 @@ This package depends on the following python packages:
 - `wordcould`
 - `nltk`
 
-On first use, some components of `nltk` that don't come with it our-of-the-box
+On first use, some components of `nltk` that don't come with it out-of-the-box
 wil be downloaded.
 
 If you want to run the
