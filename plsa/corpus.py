@@ -170,7 +170,7 @@ class Corpus:
 
     @property
     def idf(self) -> ndarray:
-        """Logarithm of the fraction of documents each word occurs in."""
+        """Logarithm of inverse fraction of documents each word occurs in."""
         return log(self.__n_docs / (self.__doc_word > 0.0).sum(axis=0))
 
     def get_doc_word(self, tf_idf: bool) -> ndarray:
