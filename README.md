@@ -65,7 +65,7 @@ you will also need to install the `jupyter` package.
 
 ## Getting Started
 Clone the
-[GitHub repository](https://github.com/yedivanseven/PLSA/blob/master/notebooks/Examples.ipynb)
+[GitHub repository](https://github.com/yedivanseven/PLSA)
 and run the `jupyter` notebook
 [Examples.ipynb](https://github.com/yedivanseven/PLSA/blob/master/notebooks/Examples.ipynb)
 in the
