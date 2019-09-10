@@ -137,9 +137,9 @@ class BasePLSA:
 
     def __normalize(self, array: ndarray) -> (ndarray, Norm):
         """Normalize probability without underflow or divide-by-zero errors."""
+        array[array < MACHINE_PRECISION] = 0.0
         norm = array.sum(axis=0)
-        array[array <= MACHINE_PRECISION] = 0.0
-        norm[norm <= MACHINE_PRECISION] = 1.0
+        norm[norm == 0.0] = 1.0
         return array / norm, norm
 
     def __rel_change(self, new: float) -> float:
