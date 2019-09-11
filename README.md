@@ -42,12 +42,18 @@ mixture.
 
 ## Installation
 This code is available on the python package index [PyPi](https://pypi.org/).
-To install, I recommend setting up a new virtual python environment, and then
-type
+To install, I _strongly_ recommend setting up a new virtual python environment,
+and then type
 ```bash
 pip install plsa
 ```
 on the console.
+
+__WARNING__: _On first use, some components of `nltk` that don't come with it out-of-the-box
+wil be downloaded. Should you install (against my express recommendation) install
+the `plsa` package system-wide (with `sudo`), then you lack the access rights
+to write the required `nltk` data to where it is supposed to go (into a subfolder of
+the `plsa` package directory)._
 
 #### Dependencies
 This package depends on the following python packages:
@@ -55,9 +61,6 @@ This package depends on the following python packages:
 - `matplotlib`
 - `wordcould`
 - `nltk`
-
-On first use, some components of `nltk` that don't come with it out-of-the-box
-wil be downloaded.
 
 If you want to run the
 [example notebook](https://github.com/yedivanseven/PLSA/blob/master/notebooks/Examples.ipynb),

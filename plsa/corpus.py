@@ -47,7 +47,8 @@ class Corpus:
                  pipeline: Pipeline,
                  col: int = -1,
                  encoding: str = 'latin_1',
-                 max_docs: int = 1000) -> 'Corpus':
+                 max_docs: int = 1000,
+                 **kwargs) -> 'Corpus':
         """Instantiate a corpus from documents in a column of a CSV file.
 
         Parameters
@@ -65,17 +66,22 @@ class Corpus:
             A valid python encoding used to read the documents.
         max_docs: int
             The maximum number of documents to read from file.
+        **kwargs
+            Keyword arguments are passed on to Python's own ``csv.reader``
+            function.
 
         Notes
         --------
         A list of available encodings can be found at
         https://docs.python.org/3/library/codecs.html
 
+        Formatting parameters for the Python's ``csv.reader`` can be found at
+        https://docs.python.org/3/library/csv.html#csv-fmt-params
 
         """
         docs, n_docs = [], 0
         with open(str(path), encoding=encoding, newline='') as stream:
-            file = csv.reader(stream)
+            file = csv.reader(stream, **kwargs)
             n_cols = len(next(file))
             col = min(sign(col) * min(abs(col), n_cols), n_cols - 1)
             for line in file:
