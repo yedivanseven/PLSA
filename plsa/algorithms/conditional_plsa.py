@@ -30,6 +30,12 @@ class ConditionalPLSA(BasePLSA):
         or just the term-frequency matrix as joint probability `p(d, w)` of
         documents and words.
 
+    Raises
+    ------
+    ValueError
+        If the number of topics is < 2 or the number of both, words and
+        documents, in the corpus isn't greater than the number of topics.
+
     Notes
     -----
     Importantly, the present implementation does `not` follow algorithm 15.3

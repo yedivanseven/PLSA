@@ -19,6 +19,7 @@ class BasePLSA:
 
     """
     def __init__(self, corpus: Corpus, n_topics: int, tf_idf: bool = False):
+        self._corpus, self.__n_topics = self.__validated(corpus, n_topics)
         self._corpus = corpus
         self.__n_topics = abs(int(n_topics))
         self.__tf_idf = bool(tf_idf)
@@ -159,3 +160,15 @@ class BasePLSA:
         p = self._doc_word.copy()
         p[p <= MACHINE_PRECISION] = 1.0
         return (p * log(p)).sum()
+
+    @staticmethod
+    def __validated(corpus: Corpus, n_topics: int) -> (Corpus, int):
+        n_topics = abs(int(n_topics))
+        if n_topics < 2:
+            raise ValueError('There must be at least 2 topics!')
+        if corpus.n_docs <= n_topics or corpus.n_words <= n_topics:
+            msg = (f'The number of both, documents (= {corpus.n_docs}) '
+                   f'and words (= {corpus.n_words}), must be greater than'
+                   f' {n_topics}, the number of topics!')
+            raise ValueError(msg)
+        return corpus, n_topics

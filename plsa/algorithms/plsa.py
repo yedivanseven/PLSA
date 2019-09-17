@@ -25,6 +25,12 @@ class PLSA(BasePLSA):
         or just the term-frequency matrix as joint probability `p(d, w)` of
         documents and words.
 
+    Raises
+    ------
+    ValueError
+        If the number of topics is < 2 or the number of both, words and
+        documents, in the corpus isn't greater than the number of topics.
+
     Notes
     -----
     The implementation follows algorithm 15.2 in Barber's book [1]_ to the

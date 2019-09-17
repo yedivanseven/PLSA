@@ -70,8 +70,17 @@ class Corpus:
             Keyword arguments are passed on to Python's own ``csv.reader``
             function.
 
+        Raises
+        ------
+        StopIteration
+            If you do not have at least two lines in your CSV file.
+
         Notes
-        --------
+        -----
+        If you set a ``col`` to a value outside the range present in the CSV
+        file, it will be silently reset to the first or last column, depending
+        on which side you exceed the permitted range.
+
         A list of available encodings can be found at
         https://docs.python.org/3/library/codecs.html
 
@@ -82,7 +91,11 @@ class Corpus:
         docs, n_docs = [], 0
         with open(str(path), encoding=encoding, newline='') as stream:
             file = csv.reader(stream, **kwargs)
-            n_cols = len(next(file))
+            try:
+                n_cols = len(next(file))
+            except StopIteration:
+                raise StopIteration('Not enough lines in CSV file. '
+                                    'Must be at least 2!')
             col = min(sign(col) * min(abs(col), n_cols), n_cols - 1)
             for line in file:
                 docs.append(line[col])
