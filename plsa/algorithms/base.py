@@ -125,7 +125,7 @@ class BasePLSA:
         n_runs: int, optional
             Number of runs to pick the best model of. Defaults to 3.
         **kwargs
-            Keyword only arguments are passed on to the ``fit`` method.
+            Keyword-only arguments are passed on to the ``fit`` method.
 
         Returns
         -------

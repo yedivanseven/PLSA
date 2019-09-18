@@ -199,8 +199,8 @@ class PlsaResult:
 
     @staticmethod
     def __evaluated(encoded: ndarray) -> (ndarray, int):
-        know_word_counts, n_new_words = encoded[:-1], int(encoded[-1])
-        if know_word_counts.sum() < 1.0:
+        known_word_counts, n_new_words = encoded[:-1], int(encoded[-1])
+        if known_word_counts.sum() < 1.0:
             raise ValueError("There aren't any known words in the document, "
                              "so no topic weights can be assigned to it.")
-        return know_word_counts, n_new_words
+        return known_word_counts, n_new_words
