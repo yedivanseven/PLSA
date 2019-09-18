@@ -74,6 +74,11 @@ class PlsaResult:
         return self.__tf_idf
 
     @property
+    def kl_divergence(self) -> float:
+        """KL-divergence of approximate and true document-word probability."""
+        return self.__kl_divergences[-1]
+
+    @property
     def topic(self) -> ndarray:
         """The relative importance of latent topics."""
         return self.__topic
@@ -120,8 +125,16 @@ class PlsaResult:
             Those words in the new document that were not present in the
             corpus the PLSA model was trained on.
 
+        Raises
+        ------
+        ValueError
+            If the document to predict on is an empty string, if there are
+            no words left after preprocessing the document, or if there are
+            no known words in the document.
+
         """
-        processed = self.__corpus.pipeline.process(doc)
+        doc = self.__non_empty_string(doc)
+        processed = self.__safely_processed(doc)
         encoded = zeros(self.__corpus.n_words + 1)
         new_words = []
         for word in processed:
@@ -129,7 +142,7 @@ class PlsaResult:
             encoded[index] += 1
             if index == self.__corpus.n_words:
                 new_words.append(word)
-        encoded, n_new_words = encoded[:-1], int(encoded[-1])
+        encoded, n_new_words = self.__evaluated(encoded)
         encoded = encoded * self.__corpus.idf if self.__tf_idf else encoded
         encoded /= encoded.sum()
         new_words = tuple(new_words)
@@ -170,3 +183,24 @@ class PlsaResult:
             return tuple((vocabulary[index], proba) for index, proba in zipped)
 
         return tuples
+
+    @staticmethod
+    def __non_empty_string(doc: str) -> str:
+        doc = str(doc)
+        if not doc:
+            raise ValueError('Cannot assign topics to an empty string!')
+        return doc
+
+    def __safely_processed(self, doc: str) -> Tuple[str, ...]:
+        processed = self.__corpus.pipeline.process(doc)
+        if not processed:
+            raise ValueError('No words left in document after preprocesing!')
+        return processed
+
+    @staticmethod
+    def __evaluated(encoded: ndarray) -> (ndarray, int):
+        know_word_counts, n_new_words = encoded[:-1], int(encoded[-1])
+        if know_word_counts.sum() < 1.0:
+            raise ValueError("There aren't any known words in the document, "
+                             "so no topic weights can be assigned to it.")
+        return know_word_counts, n_new_words

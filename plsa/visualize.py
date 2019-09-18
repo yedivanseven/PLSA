@@ -34,7 +34,7 @@ class Visualize:
         header = f'{title}:\n'
         divider = '=' * len(title) + '\n'
         n_topics = f'Number of topics:    {self.__topics.size}\n'
-        n_docs = f'Number of documents: {self.__topic_given_doc.shape[1]}\n'
+        n_docs = f'Number of documents: {self.__topic_given_doc.shape[0]}\n'
         n_words = f'Number of words:     {len(self.__word_given_topic[0])}'
         body = n_topics + n_docs + n_words
         return header + divider + body

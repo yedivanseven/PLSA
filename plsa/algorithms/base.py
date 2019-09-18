@@ -108,6 +108,43 @@ class BasePLSA:
             self._kl_divergences.append(kl_divergence)
         return self._result()
 
+    def best_of(self, n_runs: int = 3, **kwargs) -> PlsaResult:
+        """Finds the best PLSA model among the specified number of runs.
+
+        As with any iterative algorithm, also the probabilities in PSLA need
+        to be (randomly) initialized prior to the first iteration step.
+        Therefore, calling the ``fit`` method of two different instances
+        operating on the `same` corpus with the `same` number of topics
+        potentially leads to (slightly) different results, corresponding to
+        different local minima of the Kullback-Leibler divergence between
+        the true document-word probability and its approximate factorization.
+        To mitigate this effect, perform multiple runs and pick the best model.
+
+        Parameters
+        ----------
+        n_runs: int, optional
+            Number of runs to pick the best model of. Defaults to 3.
+        **kwargs
+            Keyword only arguments are passed on to the ``fit`` method.
+
+        Returns
+        -------
+        PlsaResult
+            Container class for the best result.
+
+        """
+        n_runs = abs(int(n_runs))
+        best = self.fit(**kwargs)
+        minimum_kl = best.kl_divergence
+        for _ in range(n_runs):
+            self._conditional = self.__random(*self._conditional.shape[1:])
+            self._kl_divergences = []
+            result = self.fit(**kwargs)
+            if result.kl_divergence < minimum_kl:
+                best = result
+                minimum_kl = result.kl_divergence
+        return best
+
     def _m_step(self) -> None:
         """This must be implemented for each specific PLSA flavour."""
         raise NotImplementedError
