@@ -62,13 +62,13 @@ class Pipeline:
     def __getattr__(self, name) -> PreprocessorT:
         try:
             return self.__preprocessors[name][0]
-        except KeyError:
+        except (KeyError, RecursionError):
             raise AttributeError(name)
 
     def __getitem__(self, name) -> PreprocessorT:
         try:
             return self.__preprocessors[name][0]
-        except KeyError:
+        except (KeyError, RecursionError):
             raise AttributeError(name)
 
     def process(self, doc: str) -> Tuple[str, ...]:
